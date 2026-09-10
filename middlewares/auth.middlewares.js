@@ -30,6 +30,37 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+const verifyGroupOwner = async (req, res, next) => {
+  try {
+    const Group = require("../models/Group.model");
+
+    const group = await Group.findById(req.params.groupId);
+
+    if (!group) {
+      return res.status(404).json({
+        errorMessage: "Group not found.",
+      });
+    }
+
+    const isOwner = group.owners.some(
+      (ownerId) => ownerId.toString() === req.payload._id.toString()
+    );
+
+    if (!isOwner) {
+      return res.status(403).json({
+        errorMessage: "Only group owners can perform this action.",
+      });
+    }
+
+    req.group = group;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   verifyToken,
+  verifyGroupOwner,
 };
