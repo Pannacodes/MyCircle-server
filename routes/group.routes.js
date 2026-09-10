@@ -156,6 +156,48 @@ router.post(
   }
 );
 
+// POST "/api/groups/:groupId/owners/:userId" => promote a member to owner
+router.post(
+  "/:groupId/owners/:userId",
+  verifyToken,
+  verifyGroupOwner,
+  async (req, res, next) => {
+    try {
+      const { groupId, userId } = req.params;
+
+      const group = await Group.findById(groupId);
+
+      const isMember = group.members.some(
+        (memberId) => memberId.toString() === userId
+      );
+
+      if (!isMember) {
+        return res.status(404).json({
+          errorMessage: "User is not a member of this group.",
+        });
+      }
+
+      const isAlreadyOwner = group.owners.some(
+        (ownerId) => ownerId.toString() === userId
+      );
+
+      if (isAlreadyOwner) {
+        return res.status(400).json({
+          errorMessage: "User is already an owner of this group.",
+        });
+      }
+
+      group.owners.push(userId);
+
+      await group.save();
+
+      res.status(200).json(group);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // DELETE "/api/groups/:groupId/members/:userId" => removes a member
 router.delete(
   "/:groupId/members/:userId",
@@ -202,5 +244,64 @@ router.delete(
     }
   }
 );
+
+// DELETE "/api/groups/:groupId/leave" => leaves a group
+router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.payload._id;
+
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({
+        errorMessage: "Group not found.",
+      });
+    }
+
+    const isMember = group.members.some(
+      (memberId) => memberId.toString() === userId.toString()
+    );
+
+    if (!isMember) {
+      return res.status(400).json({
+        errorMessage: "You are not a member of this group.",
+      });
+    }
+
+    const isOwner = group.owners.some(
+      (ownerId) => ownerId.toString() === userId.toString()
+    );
+
+    // Removes the user from members
+    group.members = group.members.filter(
+      (memberId) => memberId.toString() !== userId.toString()
+    );
+
+    if (isOwner) {
+      // Remove the user from owners
+      group.owners = group.owners.filter(
+        (ownerId) => ownerId.toString() !== userId.toString()
+      );
+
+      // If they were the last owner, choose a new owner
+      if (group.owners.length === 0) {
+        const randomIndex = Math.floor(
+          Math.random() * group.members.length
+        );
+
+        const newOwner = group.members[randomIndex];
+
+        group.owners.push(newOwner);
+      }
+    }
+
+    await group.save();
+
+    res.status(200).json(group);
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;
