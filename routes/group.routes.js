@@ -304,4 +304,90 @@ router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
   }
 });
 
+// POST "/api/groups/:groupId/modules" => enables a module
+router.post("/:groupId/modules", verifyToken, async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const { moduleName } = req.body;
+
+    const allowedModules = ["tasks", "activities", "shopping", "expenses"];
+
+    if (!moduleName || !allowedModules.includes(moduleName)) {
+      return res.status(400).json({
+        errorMessage:
+          "Invalid module. Choose tasks, activities, shopping, or expenses.",
+      });
+    }
+
+    const group = await Group.findOne({
+      _id: groupId,
+      members: req.payload._id,
+    });
+
+    if (!group) {
+      return res.status(404).json({
+        errorMessage: "Group not found.",
+      });
+    }
+
+    const alreadyEnabled = group.enabledModules.includes(moduleName);
+
+    if (alreadyEnabled) {
+      return res.status(400).json({
+        errorMessage: "This module is already enabled.",
+      });
+    }
+
+    group.enabledModules.push(moduleName);
+
+    await group.save();
+
+    res.status(200).json(group);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE "/api/groups/:groupId/modules/:moduleName" => disables a module
+router.delete(
+  "/:groupId/modules/:moduleName",
+  verifyToken,
+  verifyGroupOwner,
+  async (req, res, next) => {
+    try {
+      const { groupId, moduleName } = req.params;
+
+      const allowedModules = ["tasks", "activities", "shopping", "expenses"];
+
+      if (!allowedModules.includes(moduleName)) {
+        return res.status(400).json({
+          errorMessage:
+            "Invalid module. Choose tasks, activities, shopping, or expenses.",
+        });
+      }
+
+      const group = await Group.findById(groupId);
+
+      const isEnabled = group.enabledModules.includes(moduleName);
+
+      if (!isEnabled) {
+        return res.status(400).json({
+          errorMessage: "This module is not enabled.",
+        });
+      }
+
+      group.enabledModules = group.enabledModules.filter(
+        (module) => module !== moduleName
+      );
+
+      await group.save();
+
+      res.status(200).json(group);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+
 module.exports = router;
