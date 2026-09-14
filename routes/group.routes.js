@@ -3,8 +3,10 @@ const router = require("express").Router();
 const User = require("../models/User.model");
 
 const Group = require("../models/Group.model");
-const { verifyToken, verifyGroupOwner, } = require("../middlewares/auth.middlewares");
-
+const {
+  verifyToken,
+  verifyGroupOwner,
+} = require("../middlewares/auth.middlewares");
 
 // POST "/api/groups" => creates a new group
 router.post("/", verifyToken, async (req, res, next) => {
@@ -54,7 +56,9 @@ router.get("/:groupId", verifyToken, async (req, res, next) => {
     const group = await Group.findOne({
       _id: groupId,
       members: req.payload._id,
-    });
+    })
+      .populate("members", "username email")
+      .populate("owners", "username email");
 
     if (!group) {
       return res.status(404).json({
@@ -69,41 +73,53 @@ router.get("/:groupId", verifyToken, async (req, res, next) => {
 });
 
 // PUT "/api/groups/:groupId" => updates a group
-router.put("/:groupId", verifyToken, verifyGroupOwner, async (req, res, next) => {
-  try {
-    const { groupId } = req.params;
-    const { name, generalInfo } = req.body;
+router.put(
+  "/:groupId",
+  verifyToken,
+  verifyGroupOwner,
+  async (req, res, next) => {
+    try {
+      const { groupId } = req.params;
+      const { name, generalInfo } = req.body;
 
-    const updatedGroup = await Group.findByIdAndUpdate(
-      groupId,
-      {
-        name,
-        generalInfo,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+      const updatedGroup = await Group.findByIdAndUpdate(
+        groupId,
+        {
+          name,
+          generalInfo,
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      )
+        .populate("members", "username email")
+        .populate("owners", "username email");
 
-    res.status(200).json(updatedGroup);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(200).json(updatedGroup);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // DELETE "/api/groups/:groupId" => deletes a group
-router.delete("/:groupId", verifyToken, verifyGroupOwner, async (req, res, next) => {
-  try {
-    const { groupId } = req.params;
+router.delete(
+  "/:groupId",
+  verifyToken,
+  verifyGroupOwner,
+  async (req, res, next) => {
+    try {
+      const { groupId } = req.params;
 
-    await Group.findByIdAndDelete(groupId);
+      await Group.findByIdAndDelete(groupId);
 
-    res.sendStatus(204);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.sendStatus(204);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // POST "/api/groups/:groupId/members" => adds a member
 router.post(
@@ -135,7 +151,7 @@ router.post(
       const group = await Group.findById(groupId);
 
       const alreadyMember = group.members.some(
-        (memberId) => memberId.toString() === userToAdd._id.toString()
+        (memberId) => memberId.toString() === userToAdd._id.toString(),
       );
 
       if (alreadyMember) {
@@ -149,11 +165,15 @@ router.post(
 
       await group.save();
 
-      res.status(200).json(group);
+      const updatedGroup = await Group.findById(groupId)
+        .populate("members", "username email")
+        .populate("owners", "username email");
+
+      res.status(200).json(updatedGroup);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // POST "/api/groups/:groupId/owners/:userId" => promote a member to owner
@@ -168,7 +188,7 @@ router.post(
       const group = await Group.findById(groupId);
 
       const isMember = group.members.some(
-        (memberId) => memberId.toString() === userId
+        (memberId) => memberId.toString() === userId,
       );
 
       if (!isMember) {
@@ -178,7 +198,7 @@ router.post(
       }
 
       const isAlreadyOwner = group.owners.some(
-        (ownerId) => ownerId.toString() === userId
+        (ownerId) => ownerId.toString() === userId,
       );
 
       if (isAlreadyOwner) {
@@ -191,11 +211,15 @@ router.post(
 
       await group.save();
 
-      res.status(200).json(group);
+      const updatedGroup = await Group.findById(groupId)
+        .populate("members", "username email")
+        .populate("owners", "username email");
+
+      res.status(200).json(updatedGroup);
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // DELETE "/api/groups/:groupId/members/:userId" => removes a member
@@ -211,7 +235,7 @@ router.delete(
 
       // Checks if the user is a member
       const isMember = group.members.some(
-        (memberId) => memberId.toString() === userId
+        (memberId) => memberId.toString() === userId,
       );
 
       if (!isMember) {
@@ -222,7 +246,7 @@ router.delete(
 
       // Owners cannot be removed
       const isOwner = group.owners.some(
-        (ownerId) => ownerId.toString() === userId
+        (ownerId) => ownerId.toString() === userId,
       );
 
       if (isOwner) {
@@ -233,7 +257,7 @@ router.delete(
 
       // Removes the member
       group.members = group.members.filter(
-        (memberId) => memberId.toString() !== userId
+        (memberId) => memberId.toString() !== userId,
       );
 
       await group.save();
@@ -242,7 +266,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // DELETE "/api/groups/:groupId/leave" => leaves a group
@@ -260,7 +284,7 @@ router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
     }
 
     const isMember = group.members.some(
-      (memberId) => memberId.toString() === userId.toString()
+      (memberId) => memberId.toString() === userId.toString(),
     );
 
     if (!isMember) {
@@ -270,25 +294,23 @@ router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
     }
 
     const isOwner = group.owners.some(
-      (ownerId) => ownerId.toString() === userId.toString()
+      (ownerId) => ownerId.toString() === userId.toString(),
     );
 
     // Removes the user from members
     group.members = group.members.filter(
-      (memberId) => memberId.toString() !== userId.toString()
+      (memberId) => memberId.toString() !== userId.toString(),
     );
 
     if (isOwner) {
       // Remove the user from owners
       group.owners = group.owners.filter(
-        (ownerId) => ownerId.toString() !== userId.toString()
+        (ownerId) => ownerId.toString() !== userId.toString(),
       );
 
       // If they were the last owner, choose a new owner
       if (group.owners.length === 0) {
-        const randomIndex = Math.floor(
-          Math.random() * group.members.length
-        );
+        const randomIndex = Math.floor(Math.random() * group.members.length);
 
         const newOwner = group.members[randomIndex];
 
@@ -377,7 +399,7 @@ router.delete(
       }
 
       group.enabledModules = group.enabledModules.filter(
-        (module) => module !== moduleName
+        (module) => module !== moduleName,
       );
 
       await group.save();
@@ -386,8 +408,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
-
 
 module.exports = router;
