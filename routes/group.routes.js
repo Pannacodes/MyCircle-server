@@ -262,7 +262,11 @@ router.delete(
 
       await group.save();
 
-      res.status(200).json(group);
+      const updatedGroup = await Group.findById(groupId)
+        .populate("members", "username email")
+        .populate("owners", "username email");
+
+      res.status(200).json(updatedGroup);
     } catch (error) {
       next(error);
     }
@@ -320,7 +324,11 @@ router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
 
     await group.save();
 
-    res.status(200).json(group);
+    const updatedGroup = await Group.findById(groupId)
+      .populate("members", "username email")
+      .populate("owners", "username email");
+
+    res.status(200).json(updatedGroup);
   } catch (error) {
     next(error);
   }
@@ -363,8 +371,11 @@ router.post("/:groupId/modules", verifyToken, async (req, res, next) => {
     group.enabledModules.push(moduleName);
 
     await group.save();
+    const updatedGroup = await Group.findById(groupId)
+      .populate("members", "username email")
+      .populate("owners", "username email");
 
-    res.status(200).json(group);
+    res.status(200).json(updatedGroup);
   } catch (error) {
     next(error);
   }
@@ -403,8 +414,11 @@ router.delete(
       );
 
       await group.save();
+      const updatedGroup = await Group.findById(groupId)
+        .populate("members", "username email")
+        .populate("owners", "username email");
 
-      res.status(200).json(group);
+      res.status(200).json(updatedGroup);
     } catch (error) {
       next(error);
     }
