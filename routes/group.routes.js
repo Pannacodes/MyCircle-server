@@ -16,7 +16,7 @@ router.post("/", verifyToken, async (req, res, next) => {
     const { name, generalInfo, enabledModules } = req.body;
 
     // Group name is required
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({
         errorMessage: "Group name is required.",
       });
@@ -83,6 +83,12 @@ router.put(
     try {
       const { groupId } = req.params;
       const { name, generalInfo } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({
+          errorMessage: "Group name is required.",
+        });
+      }
 
       const updatedGroup = await Group.findByIdAndUpdate(
         groupId,

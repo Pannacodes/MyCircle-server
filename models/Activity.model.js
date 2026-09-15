@@ -15,6 +15,7 @@ const activitySchema = new Schema(
 
     category: {
       type: String,
+      required: [true, "Activity category is required."],
       enum: [
         "Food & Dining",
         "Entertainment",
@@ -28,6 +29,7 @@ const activitySchema = new Schema(
 
     date: {
       type: Date,
+      required: [true, "Activity date is required."],
     },
 
     location: {

@@ -91,6 +91,7 @@ router.post("/login", async (req, res, next) => {
     // Generates JWT
     const payload = {
       _id: foundUser._id,
+      username: foundUser.username,
       email: foundUser.email,
     };
 

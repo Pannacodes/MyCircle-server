@@ -10,9 +10,21 @@ router.post("/", verifyToken, async (req, res, next) => {
   try {
     const { title, description, category, date, location, group } = req.body;
 
-    if (!title) {
+    if (!title || !title.trim()) {
       return res.status(400).json({
         errorMessage: "Activity title is required.",
+      });
+    }
+
+    if (!category) {
+      return res.status(400).json({
+        errorMessage: "Activity category is required.",
+      });
+    }
+
+    if (!date) {
+      return res.status(400).json({
+        errorMessage: "Activity date is required.",
       });
     }
 
@@ -99,6 +111,24 @@ router.put("/:activityId", verifyToken, async (req, res, next) => {
     const { activityId } = req.params;
 
     const { title, description, category, date, location } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        errorMessage: "Activity title is required.",
+      });
+    }
+
+    if (!category) {
+      return res.status(400).json({
+        errorMessage: "Activity category is required.",
+      });
+    }
+
+    if (!date) {
+      return res.status(400).json({
+        errorMessage: "Activity date is required.",
+      });
+    }
 
     const activity = await Activity.findById(activityId);
 

@@ -17,7 +17,7 @@ router.post("/", verifyToken, async (req, res, next) => {
       group,
     } = req.body;
 
-    if (!title) {
+    if (!title || !title.trim()) {
       return res.status(400).json({
         errorMessage: "Task title is required.",
       });
@@ -110,6 +110,12 @@ router.put("/:taskId", verifyToken, async (req, res, next) => {
       dueDate,
       completed,
     } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        errorMessage: "Task title is required.",
+      });
+    }
 
     const task = await Task.findById(taskId);
 
