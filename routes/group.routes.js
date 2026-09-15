@@ -1,8 +1,10 @@
 const router = require("express").Router();
 
 const User = require("../models/User.model");
-
 const Group = require("../models/Group.model");
+const Task = require("../models/Task.model");
+const Activity = require("../models/Activity.model");
+
 const {
   verifyToken,
   verifyGroupOwner,
@@ -111,6 +113,10 @@ router.delete(
   async (req, res, next) => {
     try {
       const { groupId } = req.params;
+      
+      await Task.deleteMany({ group: groupId });
+
+      await Activity.deleteMany({ group: groupId });
 
       await Group.findByIdAndDelete(groupId);
 
