@@ -42,7 +42,7 @@ router.get("/", verifyToken, async (req, res, next) => {
   try {
     const groups = await Group.find({
       members: req.payload._id,
-    });
+    }).populate("members", "username");
 
     res.status(200).json(groups);
   } catch (error) {
@@ -119,7 +119,7 @@ router.delete(
   async (req, res, next) => {
     try {
       const { groupId } = req.params;
-      
+
       await Task.deleteMany({ group: groupId });
 
       await Activity.deleteMany({ group: groupId });
