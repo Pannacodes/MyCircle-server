@@ -4,6 +4,7 @@ const User = require("../models/User.model");
 const Group = require("../models/Group.model");
 const Task = require("../models/Task.model");
 const Activity = require("../models/Activity.model");
+const Shopping = require("../models/Shopping.model");
 
 const {
   verifyToken,
@@ -123,6 +124,8 @@ router.delete(
       await Task.deleteMany({ group: groupId });
 
       await Activity.deleteMany({ group: groupId });
+
+      await Shopping.deleteMany({ group: groupId });
 
       await Group.findByIdAndDelete(groupId);
 
@@ -319,12 +322,12 @@ router.delete("/:groupId/leave", verifyToken, async (req, res, next) => {
     );
 
     if (isOwner) {
-      // Remove the user from owners
+      // Removes the user from owners
       group.owners = group.owners.filter(
         (ownerId) => ownerId.toString() !== userId.toString(),
       );
 
-      // If they were the last owner, choose a new owner
+      // If they were the last owner, chooses a new owner
       if (group.owners.length === 0) {
         const randomIndex = Math.floor(Math.random() * group.members.length);
 
